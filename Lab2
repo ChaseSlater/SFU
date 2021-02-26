@@ -1,0 +1,111 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy.signal
+import numpy as np
+import Lab2Functions as l2f
+
+column_names = [
+    'ecg',
+    't'
+]
+
+restingecg = pd.read_csv('C:/Users/chase/Documents/SFU Class Documents/BPK 409/Lab 2/Resting ECG Lab2.txt',
+                         names=column_names, sep = '\t', skiprows= 10000, skipfooter= 5000)
+
+restingecg.t = restingecg.t/1000
+
+Wn = 0.1
+b, a = scipy.signal.butter(4, Wn, 'low', analog = False)
+filt_restingecg = scipy.signal.filtfilt(b, a, restingecg.ecg)
+
+#Question2
+plt.figure(1)
+plt.plot(restingecg.t, restingecg.ecg, label = 'Raw ECG')
+plt.plot(restingecg.t, filt_restingecg, label = 'Filtered ECG')
+plt.axis([320, 325, 270, 410])
+plt.title("Chase's Resting ECG Measure")
+plt.xlabel("Time (s)")
+plt.ylabel("ECG Amplitude ()")
+plt.legend()
+
+#Question4
+peaks,_ = scipy.signal.find_peaks(filt_restingecg, height = 380)
+
+plt.figure(3)
+plt.plot(restingecg.t, filt_restingecg, label = 'Filtered ECG')
+plt.plot(restingecg.t[peaks], filt_restingecg[peaks], "x", label = 'R-Wave Peak')
+plt.axis([320, 325, 270, 410])
+plt.title("Filtered ECG Signal with R-Wave Peaks Labelled")
+plt.xlabel("Time (s)")
+plt.ylabel("ECG Amplitude ()")
+plt.legend()
+
+#Question5
+d_ecg, peaks_d_ecg = l2f.decg_peaks(restingecg.ecg, restingecg.t)
+Rwave_peaks_d_ecg = l2f.d_ecg_peaks(d_ecg, peaks_d_ecg, restingecg.t, 0.4, 0.5)
+restingecg_Rwave_t = l2f.Rwave_peaks(restingecg.ecg, d_ecg, Rwave_peaks_d_ecg, restingecg.t)
+
+RR_interval = np.diff(restingecg_Rwave_t)
+plt.plot(RR_interval)
+
+heartrate = (1/RR_interval)*60
+
+Wn = 0.2
+b2, a2 = scipy.signal.butter(4, Wn, 'low', analog = False) #find a good value for Wn
+filt_heartrate = scipy.signal.filtfilt(b2, a2, heartrate) 
+plt.plot(filt_heartrate)
+
+avg = sum(filt_heartrate)/len(filt_heartrate)
+print("The average is ", round(avg,2))
+np.std(filt_heartrate)
+
+#Question 7
+bikeecg = pd.read_csv('C:/Users/chase/Documents/SFU Class Documents/BPK 409/Lab 2/ExerciseBike.txt',
+                      names=column_names, sep = '\t', skiprows= 5000, skipfooter= 5000)
+
+bikeecg.t = bikeecg.t/1000
+
+Wn = 0.1
+b, a = scipy.signal.butter(4, Wn, 'low', analog = False)
+filt_bikeecg = scipy.signal.filtfilt(b, a, bikeecg.ecg)
+
+peaks,_ = scipy.signal.find_peaks(filt_bikeecg, height = 380)     
+plt.figure()                                                            #I think these plots can be deleted?
+plt.plot(bikeecg.t, filt_bikeecg)
+plt.plot(bikeecg.t[peaks], filt_bikeecg[peaks], "x")
+
+d_ecg, peaks_d_ecg = l2f.decg_peaks(bikeecg.ecg, bikeecg.t)
+Rwave_peaks_d_ecg = l2f.d_ecg_peaks(d_ecg, peaks_d_ecg, bikeecg.t, 0.4, 0.5)
+bikeecg_Rwave_t = l2f.Rwave_peaks(bikeecg.ecg, d_ecg, Rwave_peaks_d_ecg, bikeecg.t)
+
+RR_interval = np.diff(bikeecg_Rwave_t)
+
+heartrate = (1/RR_interval)*60
+
+Wn = 0.1
+b2, a2 = scipy.signal.butter(4, Wn, 'low', analog = False) 
+filt_heartrate = scipy.signal.filtfilt(b2, a2, heartrate) 
+plt.plot(heartrate)
+plt.plot(filt_heartrate)
+
+plt.figure(3)
+plt.plot(filt_heartrate)
+plt.title("Filtered Heart Rate During Stationary Bike Exercise Experiment")
+plt.xlabel('Time (s)')
+plt.ylabel('Heart Rate (bpm)')
+
+#Question8
+plt.figure(4)
+plt.plot(filt_heartrate)
+plt.axis([60, 220, 45, 120])
+plt.title("Heart Rate During Increased Workload on Stationary Bike")
+plt.xlabel('Time (s)')
+plt.ylabel('Heart Rate (bpm)')      
+
+#Question9
+plt.figure(5)
+plt.plot(filt_heartrate)
+plt.axis([400, 620, 45, 135]) 
+plt.title("Heart Rate During Decreased Workload on Stationary Bike")
+plt.xlabel('Time(s)')
+plt.ylabel('Heart Rate (bpm)') 
